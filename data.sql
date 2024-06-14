@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 DROP TABLE IF EXISTS users;
 
+select * from users;
+
 
 
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'sapassword';
