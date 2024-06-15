@@ -14,6 +14,8 @@ DROP TABLE IF EXISTS users;
 
 select * from users;
 
+SELECT * FROM users WHERE email = 'hieu92145@gmail.com' AND password = 123
+
 
 
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'sapassword';
