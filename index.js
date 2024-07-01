@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
+
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
 require('dotenv').config();
 
 const db = mysql.createConnection({
@@ -28,6 +34,13 @@ db.connect((err) => {
     console.log('Connected to MySQL database');
 });
 
+
+// Cấu hình Cloudinary với thông tin tài khoản của bạn
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 app.use(cors());
 
@@ -66,6 +79,20 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+
+app.post('/upload-image', upload.single('image'), async (req, res) => {
+    try {
+        const imagePath = req.file.path;
+        const result = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
+
+        // Xóa file tạm thời sau khi upload thành công
+        fs.unlinkSync(imagePath);
+
+        res.status(200).json({ message: 'Hình ảnh đã được tải lên thành công!', url: result.url });
+    } catch (error) {
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên hình ảnh', error: error.message });
+    }
+});
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
