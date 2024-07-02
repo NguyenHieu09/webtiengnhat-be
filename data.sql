@@ -9,6 +9,28 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(50) NOT NULL,
     role ENUM('user', 'admin', 'editer') NOT NULL DEFAULT 'user'
 );
+
+CREATE TABLE `registration_form` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `topic` VARCHAR(255),
+    `fullName` VARCHAR(255),
+    `phone` VARCHAR(255),
+    `address` VARCHAR(255),
+    `question` VARCHAR(255),
+    `user_id` INT,
+     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+);
+
+-- Bảng bài đăng (posts)
+CREATE TABLE `posts` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255), -- Chú ý là title, không phải titile
+    `type` ENUM('KH', 'DH', 'KS', 'XKLD', 'TD'),
+    `img` VARCHAR(255),
+    `content` TEXT,
+    `user_id` INT,
+    FOREIGN KEY (`user_posts_pk`) REFERENCES `users` (`id`)
+);
 INSERT INTO users (firstName, lastName, email, password, role)
 VALUES ('Admin', 'User', 'admin@gmail.com', '123', 'admin');
 

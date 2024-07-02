@@ -80,17 +80,42 @@ app.post('/api/login', (req, res) => {
 });
 
 
-app.post('/upload-image', upload.single('image'), async (req, res) => {
+// app.post('/upload-image', upload.single('image'), async (req, res) => {
+//     try {
+//         const imagePath = req.file.path;
+//         const result = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
+
+//         // Xóa file tạm thời sau khi upload thành công
+//         fs.unlinkSync(imagePath);
+
+//         res.status(200).json({ message: 'Hình ảnh đã được tải lên thành công!', url: result.url });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên hình ảnh', error: error.message });
+//     }
+// });
+
+app.post('/api/posts', upload.single('image'), async (req, res) => {
     try {
+        const { title, type, content, user_id } = req.body;
         const imagePath = req.file.path;
-        const result = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
+
+        // Upload hình ảnh lên Cloudinary
+        const cloudinaryUpload = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
 
         // Xóa file tạm thời sau khi upload thành công
         fs.unlinkSync(imagePath);
 
-        res.status(200).json({ message: 'Hình ảnh đã được tải lên thành công!', url: result.url });
+        // Lưu thông tin bài post vào MySQL
+        const sql = 'INSERT INTO posts (title, type, img, content, user_id) VALUES (?, ?, ?, ?, ?)';
+        db.query(sql, [title, type, cloudinaryUpload.secure_url, content, user_id], (err, result) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+            } else {
+                res.status(200).json({ message: 'Bài post đã được tạo thành công!', post: { title, type, img: cloudinaryUpload.secure_url, content, user_id } });
+            }
+        });
     } catch (error) {
-        res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên hình ảnh', error: error.message });
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo bài post', error: error.message });
     }
 });
 
