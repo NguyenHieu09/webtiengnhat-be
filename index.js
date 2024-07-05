@@ -79,21 +79,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-
-// app.post('/upload-image', upload.single('image'), async (req, res) => {
-//     try {
-//         const imagePath = req.file.path;
-//         const result = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
-
-//         // Xóa file tạm thời sau khi upload thành công
-//         fs.unlinkSync(imagePath);
-
-//         res.status(200).json({ message: 'Hình ảnh đã được tải lên thành công!', url: result.url });
-//     } catch (error) {
-//         res.status(500).json({ message: 'Đã xảy ra lỗi khi tải lên hình ảnh', error: error.message });
-//     }
-// });
-
 app.post('/api/posts', upload.single('image'), async (req, res) => {
     try {
         const { title, type, content, user_id } = req.body;
@@ -111,13 +96,34 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
             if (err) {
                 res.status(500).json({ error: err.message });
             } else {
-                res.status(200).json({ message: 'Bài post đã được tạo thành công!', post: { title, type, img: cloudinaryUpload.secure_url, content, user_id } });
+                const postId = result.insertId; // Lấy id của bài post vừa được tạo
+                res.status(200).json({ message: 'Bài post đã được tạo thành công!', post: { id: postId, title, type, img: cloudinaryUpload.secure_url, content, user_id } });
             }
         });
     } catch (error) {
         res.status(500).json({ message: 'Đã xảy ra lỗi khi tạo bài post', error: error.message });
     }
 });
+
+
+app.get('/api/posts/:id', (req, res) => {
+    const postId = req.params.id;
+    const sql = 'SELECT * FROM posts WHERE id = ?';
+
+    db.query(sql, [postId], (err, results) => {
+        if (err) {
+            console.error('Error retrieving post:', err.message);
+            return res.status(500).json({ error: 'Error retrieving post' });
+        }
+        if (results.length > 0) {
+            const post = results[0];
+            res.status(200).json({ post });
+        } else {
+            res.status(404).json({ error: 'Post not found' });
+        }
+    });
+});
+
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
