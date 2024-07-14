@@ -79,6 +79,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+
 app.post('/api/posts', upload.single('image'), async (req, res) => {
     try {
         const { title, type, content, user_id } = req.body;
@@ -123,6 +124,25 @@ app.get('/api/posts/:id', (req, res) => {
         }
     });
 });
+
+app.get('/api/type/posts', (req, res) => {
+    const { type } = req.query; // Lấy 'type' từ query parameters
+
+    // SQL query để lấy 100 bài post theo 'type', sắp xếp theo thời gian tạo giảm dần
+    const sql = 'SELECT * FROM posts WHERE type = ? ORDER BY created_at DESC LIMIT 100';
+
+    db.query(sql, [type], (err, results) => {
+        if (err) {
+            console.error('Error retrieving posts:', err.message);
+            return res.status(500).json({ error: 'Error retrieving posts' });
+        }
+        res.status(200).json({ posts: results });
+    });
+});
+
+
+
+
 
 
 app.listen(port, () => {

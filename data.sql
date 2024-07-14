@@ -29,8 +29,28 @@ CREATE TABLE `posts` (
     `img` VARCHAR(255),
     `content` TEXT,
     `user_id` INT,
-    FOREIGN KEY (`user_posts_pk`) REFERENCES `users` (`id`)
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
+
+
+ALTER TABLE `posts`
+ADD COLUMN `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TABLE `posts` (
+    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255), -- Chú ý là title, không phải titile
+    `type` ENUM('KH', 'DH', 'KS', 'XKLD', 'TD'),
+    `img` VARCHAR(255),
+    `content` TEXT,
+    `user_id` INT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+);
+
+
+
+ALTER TABLE posts MODIFY COLUMN content LONGTEXT;
+
 INSERT INTO users (firstName, lastName, email, password, role)
 VALUES ('Admin', 'User', 'admin@gmail.com', '123', 'admin');
 
