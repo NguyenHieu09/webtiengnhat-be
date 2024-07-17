@@ -47,7 +47,10 @@ CREATE TABLE `posts` (
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
 
+SELECT type, COUNT(*) as total_posts FROM posts GROUP BY type;
 
+ALTER TABLE `posts`
+ADD COLUMN `subtype` VARCHAR(100) AFTER `type`;
 
 ALTER TABLE posts MODIFY COLUMN content LONGTEXT;
 

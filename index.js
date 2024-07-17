@@ -8,6 +8,7 @@ const upload = multer({ dest: 'uploads/' });
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
+const { log } = require('console');
 require('dotenv').config();
 
 const db = mysql.createConnection({
@@ -47,7 +48,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-
+//xử lý đăng kí
 app.post('/api/signup', (req, res) => {
     const { firstName, lastName, email, password } = req.body;
     const sql = 'INSERT INTO users (firstName, lastName, email, password) VALUES (?, ?, ?,?)';
@@ -61,7 +62,7 @@ app.post('/api/signup', (req, res) => {
 });
 
 
-
+//xử lý đăng nhập
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -78,11 +79,54 @@ app.post('/api/login', (req, res) => {
         res.json({ message: 'User logged in successfully', user: result[0] });
     });
 });
+//chỉnh sửa bài viết
+app.put('/api/posts/:id', upload.single('image'), async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { title, type, content, subtype } = req.body;
+
+        let updatedImgUrl = null;
+
+        if (req.file) {
+            const imagePath = req.file.path;
+
+            // Upload hình ảnh mới lên Cloudinary
+            const cloudinaryUpload = await cloudinary.uploader.upload(imagePath, { folder: "your_folder_name" });
+
+            // Xóa file tạm thời sau khi upload thành công
+            fs.unlinkSync(imagePath);
+
+            updatedImgUrl = cloudinaryUpload.secure_url;
+        }
+
+        // SQL query để cập nhật bài post trong cơ sở dữ liệu
+        const sqlUpdate = 'UPDATE posts SET title = ?, type = ?,subtype=?,  content = ?, img = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?';
+        const updateParams = [title, type, subtype, content, updatedImgUrl, postId];
 
 
+        db.query(sqlUpdate, updateParams, (err, result) => {
+            if (err) {
+                console.error('Error updating post:', err.message);
+                return res.status(500).json({ error: 'Error updating post' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Post not found' });
+            }
+            res.status(200).json({
+                message: 'Post updated successfully',
+                updatedPost: { id: postId, title, type, subtype, content, img: updatedImgUrl, created_at: new Date().toISOString() }
+            });
+
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật bài post', error: error.message });
+    }
+});
+
+//thêm bài viết
 app.post('/api/posts', upload.single('image'), async (req, res) => {
     try {
-        const { title, type, content, user_id } = req.body;
+        const { title, type, subtype, content, user_id } = req.body;
         const imagePath = req.file.path;
 
         // Upload hình ảnh lên Cloudinary
@@ -92,13 +136,13 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
         fs.unlinkSync(imagePath);
 
         // Lưu thông tin bài post vào MySQL
-        const sql = 'INSERT INTO posts (title, type, img, content, user_id) VALUES (?, ?, ?, ?, ?)';
-        db.query(sql, [title, type, cloudinaryUpload.secure_url, content, user_id], (err, result) => {
+        const sql = 'INSERT INTO posts (title, type, subtype, img, content, user_id) VALUES (?, ?, ?, ?, ?,?)';
+        db.query(sql, [title, type, subtype, cloudinaryUpload.secure_url, content, user_id], (err, result) => {
             if (err) {
                 res.status(500).json({ error: err.message });
             } else {
                 const postId = result.insertId; // Lấy id của bài post vừa được tạo
-                res.status(200).json({ message: 'Bài post đã được tạo thành công!', post: { id: postId, title, type, img: cloudinaryUpload.secure_url, content, user_id } });
+                res.status(200).json({ message: 'Bài post đã được tạo thành công!', post: { id: postId, title, type, subtype, img: cloudinaryUpload.secure_url, content, user_id } });
             }
         });
     } catch (error) {
@@ -106,7 +150,7 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
     }
 });
 
-
+//lấy bài viết theo id
 app.get('/api/posts/:id', (req, res) => {
     const postId = req.params.id;
     const sql = 'SELECT * FROM posts WHERE id = ?';
@@ -125,6 +169,25 @@ app.get('/api/posts/:id', (req, res) => {
     });
 });
 
+//xóa bài viết
+app.delete('/api/posts/:id', (req, res) => {
+    const postId = req.params.id;
+    const sql = 'DELETE FROM posts WHERE id = ?';
+
+    db.query(sql, [postId], (err, result) => {
+        if (err) {
+            console.error('Error deleting post:', err.message);
+            return res.status(500).json({ error: 'Error deleting post' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        res.status(200).json({ message: 'Post deleted successfully' });
+    });
+});
+
+
+//lấy 100 bài post theo 'type', sắp xếp theo thời gian tạo giảm dần
 app.get('/api/type/posts', (req, res) => {
     const { type } = req.query; // Lấy 'type' từ query parameters
 
@@ -141,6 +204,23 @@ app.get('/api/type/posts', (req, res) => {
 });
 
 
+//đếm số lượng bài viết
+app.get('/api/count-post-by-type', (req, res) => {
+    const sql = 'SELECT type, COUNT(*) AS total_posts FROM posts GROUP BY type';
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Error retrieving post counts by type:', err.message);
+            return res.status(500).json({ error: 'Error retrieving post counts by type' });
+        }
+        // Kiểm tra nếu không có bài viết nào được tìm thấy
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'No posts found' });
+        }
+        // Trả về kết quả dưới dạng JSON
+        res.status(200).json({ counts: results });
+    });
+});
 
 
 
