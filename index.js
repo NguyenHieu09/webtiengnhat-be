@@ -56,7 +56,7 @@ app.post('/api/signup', (req, res) => {
         if (err) {
             res.status(500).json({ error: err.message });
         } else {
-            res.status(200).json({ message: 'User registered successfully', user: { firstName, lastName, email } });
+            res.status(200).json({ message: 'Chúc mừng bạn đã đăng kí thành công!', user: { firstName, lastName, email } });
         }
     });
 });
@@ -73,7 +73,7 @@ app.post('/api/login', (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
         }
         if (result.length === 0) {
-            return res.status(401).json({ error: 'Invalid email or password' });
+            return res.status(401).json({ error: 'Email hoặc mật khẩu không khớp' });
         }
         console.log('User logged in successfully');
         res.json({ message: 'User logged in successfully', user: result[0] });
