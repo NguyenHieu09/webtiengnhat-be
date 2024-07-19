@@ -236,6 +236,7 @@ app.get('/api/types', (req, res) => {
 });
 
 
+
 app.get('/api/subtypes/:type', (req, res) => {
     const type = req.params.type;
     const query = 'SELECT distinct `subtype` FROM `posts` WHERE `type` = ?';
@@ -248,6 +249,28 @@ app.get('/api/subtypes/:type', (req, res) => {
         }
     });
 });
+
+// Route để lấy danh sách các bài viết theo subtype
+app.get('/api/post-by-subtype', (req, res) => {
+    const subtype = req.query.subtype;
+
+    // Kiểm tra xem subtype có được cung cấp không
+    if (!subtype) {
+        return res.status(400).json({ error: 'Missing subtype parameter' });
+    }
+
+    // Sử dụng COLLATE để thực hiện tìm kiếm không phân biệt chữ hoa chữ thường
+    const query = 'SELECT * FROM `posts` WHERE LOWER(`subtype`) = LOWER(?)';
+
+    db.query(query, [subtype], (error, results) => {
+        if (error) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
 
 // Load bài post theo type và subtype
 app.get('/api/subtype-posts', (req, res) => {
