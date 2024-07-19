@@ -223,6 +223,61 @@ app.get('/api/count-post-by-type', (req, res) => {
 });
 
 
+app.get('/api/types', (req, res) => {
+    const query = 'SELECT DISTINCT `type` FROM `posts`';
+
+    db.query(query, (error, results) => {
+        if (error) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+
+app.get('/api/subtypes/:type', (req, res) => {
+    const type = req.params.type;
+    const query = 'SELECT distinct `subtype` FROM `posts` WHERE `type` = ?';
+
+    db.query(query, [type], (error, results) => {
+        if (error) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+// Load bài post theo type và subtype
+app.get('/api/subtype-posts', (req, res) => {
+    const type = req.query.type;
+    const subtype = req.query.subtype;
+    let query = 'SELECT * FROM `posts` WHERE 1=1';
+    const params = [];
+
+    if (type) {
+        query += ' AND LOWER(`type`) = LOWER(?)';
+        params.push(type.toLowerCase());
+    }
+
+    if (subtype) {
+        query += ' AND LOWER(`subtype`) = LOWER(?)';
+        params.push(subtype.toLowerCase());
+    }
+
+    db.query(query, params, (error, results) => {
+        if (error) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+
+
+
 
 
 app.listen(port, () => {
