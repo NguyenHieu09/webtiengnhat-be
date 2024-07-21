@@ -251,25 +251,25 @@ app.get('/api/subtypes/:type', (req, res) => {
 });
 
 // Route để lấy danh sách các bài viết theo subtype
-app.get('/api/post-by-subtype', (req, res) => {
-    const subtype = req.query.subtype;
+// app.get('/api/post-by-subtype', (req, res) => {
+//     const subtype = req.query.subtype;
 
-    // Kiểm tra xem subtype có được cung cấp không
-    if (!subtype) {
-        return res.status(400).json({ error: 'Missing subtype parameter' });
-    }
+//     // Kiểm tra xem subtype có được cung cấp không
+//     if (!subtype) {
+//         return res.status(400).json({ error: 'Missing subtype parameter' });
+//     }
 
-    // Sử dụng COLLATE để thực hiện tìm kiếm không phân biệt chữ hoa chữ thường
-    const query = 'SELECT * FROM `posts` WHERE LOWER(`subtype`) = LOWER(?)';
+//     // Sử dụng COLLATE để thực hiện tìm kiếm không phân biệt chữ hoa chữ thường
+//     const query = 'SELECT * FROM `posts` WHERE LOWER(`subtype`) = LOWER(?)';
 
-    db.query(query, [subtype], (error, results) => {
-        if (error) {
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            res.json(results);
-        }
-    });
-});
+//     db.query(query, [subtype], (error, results) => {
+//         if (error) {
+//             res.status(500).json({ error: 'Internal Server Error' });
+//         } else {
+//             res.json(results);
+//         }
+//     });
+// });
 
 
 // Load bài post theo type và subtype
@@ -298,6 +298,36 @@ app.get('/api/subtype-posts', (req, res) => {
     });
 });
 
+
+app.get('/api/posts-by-subtype', (req, res) => {
+    const subtype = req.query.subtype;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; // số lượng bài post trên mỗi trang
+    const offset = (page - 1) * limit;
+
+    const query = `
+        SELECT * FROM posts 
+        WHERE subtype = ? 
+        ORDER BY created_at DESC 
+        LIMIT ? OFFSET ?;
+    `;
+
+    db.query(query, [subtype, limit, offset], (error, results) => {
+        if (error) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            const countQuery = 'SELECT COUNT(*) AS total FROM posts WHERE subtype = ?';
+            db.query(countQuery, [subtype], (countError, countResults) => {
+                if (countError) {
+                    res.status(500).json({ error: 'Internal Server Error' });
+                } else {
+                    const totalPosts = countResults[0].total;
+                    res.json({ posts: results, totalPosts });
+                }
+            });
+        }
+    });
+});
 
 
 
