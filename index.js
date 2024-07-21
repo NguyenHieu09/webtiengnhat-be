@@ -302,7 +302,7 @@ app.get('/api/subtype-posts', (req, res) => {
 app.get('/api/posts-by-subtype', (req, res) => {
     const subtype = req.query.subtype;
     const page = parseInt(req.query.page) || 1;
-    const limit = 10; // số lượng bài post trên mỗi trang
+    const limit = 4; // số lượng bài post trên mỗi trang
     const offset = (page - 1) * limit;
 
     const query = `
