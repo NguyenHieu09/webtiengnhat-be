@@ -305,6 +305,8 @@ app.get('/api/posts-by-subtype', (req, res) => {
     const limit = 4; // số lượng bài post trên mỗi trang
     const offset = (page - 1) * limit;
 
+    console.log(`subtype: ${subtype}, page: ${page}, limit: ${limit}, offset: ${offset}`); // Debugging info
+
     const query = `
         SELECT * FROM posts 
         WHERE subtype = ? 
@@ -314,11 +316,13 @@ app.get('/api/posts-by-subtype', (req, res) => {
 
     db.query(query, [subtype, limit, offset], (error, results) => {
         if (error) {
+            console.error(`Database query error: ${error}`); // Debugging info
             res.status(500).json({ error: 'Internal Server Error' });
         } else {
             const countQuery = 'SELECT COUNT(*) AS total FROM posts WHERE subtype = ?';
             db.query(countQuery, [subtype], (countError, countResults) => {
                 if (countError) {
+                    console.error(`Count query error: ${countError}`); // Debugging info
                     res.status(500).json({ error: 'Internal Server Error' });
                 } else {
                     const totalPosts = countResults[0].total;
